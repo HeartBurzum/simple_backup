@@ -38,7 +38,13 @@ class Config:
         if self.encryption_enabled:
             self.fingerprints = self.__get_key_fingerprints()
             self.key_directory = self.__get_public_key_dir()
-            self.key_files = os.listdir(self.key_directory)
+            try:
+                self.key_files = os.listdir(self.key_directory)
+            except FileNotFoundError as e:
+                logger.error(
+                    f"Unable to find public keys, check SIMPLE_BACKUP_ENCRYPTION_PUBLIC_KEY_DIR value. Aborting...\n{e}"
+                )
+                sys.exit(1)
         else:
             self.fingerprints = ""
 

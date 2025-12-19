@@ -9,24 +9,19 @@ logger = logging.getLogger(__name__)
 
 
 class Encrypt:
-    def __init__(self, config: Config, files: list[str]):
+    def __init__(self, config: Config):
         self.gpg = gnupg.GPG()
-        self.files = files
         self.recipients = config.fingerprints
         self.public_key_dir = config.key_directory
         self.public_key_dir_filelist = config.key_files
         self.keyring_ok = False
 
-        self.start_encryption()
-
-    def start_encryption(self):
-        for file in self.files:
+    def start_encryption(self, files: list[str]):
+        for file in files:
             self.encrypt_file(file, f"{file}.asc")
 
     def check_keyring(self):
-        imported_keys = self.gpg.list_keys()  # get currently imported keys
-        # if the recipients key is not in the keyring
-        if self.recipients not in imported_keys.fingerprints:
+        if not self.fingerprint_in_keyring():
             logger.info(
                 "No matching public key has been imported for supplied fingerprints."
             )
@@ -41,6 +36,7 @@ class Encrypt:
                 # and check if the fingerprints of any key files
                 # matches the recipients, if so, import the key to the keyring
                 for file in self.public_key_dir_filelist:
+                    logger.error(file)
                     with open(f"{self.public_key_dir}/{file}", "r") as key_file:
                         text = key_file.read()
                     keys = self.gpg.scan_keys_mem(text)
@@ -52,6 +48,12 @@ class Encrypt:
 
         self.keyring_ok = True
         logger.info("keyring check completed successfully")
+
+    def fingerprint_in_keyring(self) -> bool:
+        keyring = self.gpg.list_keys()
+        if self.recipients in keyring.fingerprints:
+            return True
+        return False
 
     def encrypt_file(self, input: str, output: str) -> None:
         if not self.keyring_ok:
