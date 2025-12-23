@@ -4,7 +4,7 @@ import tarfile
 
 from config import Config
 
-log_level = logging.INFO
+log_level = logging.DEBUG
 log_format = "[%(asctime)s][%(levelname)s][%(module)s] %(message)s"
 logging.basicConfig(level=log_level, format=log_format)
 logger = logging.getLogger(name=__name__)
@@ -31,6 +31,9 @@ class Backup:
                         os.remove(tar_file_full_path)
                         errors += 1
                         continue
+
+                if self.config.encryption_enabled:
+                    self.config.encryptor.start_encryption(tar_file_full_path)
             except PermissionError as e:
                 errors += 1
                 logger.error(f"Access was denied while creating tarball. {e}")

@@ -1,24 +1,35 @@
 import logging
+import os
 import sys
+from typing import Union
 
 import gnupg
-
-from config import Config
 
 logger = logging.getLogger(__name__)
 
 
 class Encrypt:
-    def __init__(self, config: Config):
+    def __init__(self, fingerprints: Union[str, list[str]], key_directory: str):
         self.gpg = gnupg.GPG()
-        self.recipients = config.fingerprints
-        self.public_key_dir = config.key_directory
-        self.public_key_dir_filelist = config.key_files
+        self.recipients = fingerprints
+        self.public_key_dir = key_directory
         self.keyring_ok = False
 
-    def start_encryption(self, files: list[str]):
-        for file in files:
-            self.encrypt_file(file, f"{file}.asc")
+        try:
+            self.public_key_dir_filelist = os.listdir(self.public_key_dir)
+        except FileNotFoundError as e:
+            logger.error(
+                f"Unable to find public keys, check SIMPLE_BACKUP_ENCRYPTION_PUBLIC_KEY_DIR value. Aborting...\n{e}"
+            )
+            sys.exit(1)
+
+    def start_encryption(self, files: Union[str, list[str]]):
+        logger.debug(f"start_encryption {files=}")
+        if type(files) == str:
+            self.encrypt_file(str(files), f"{files}.asc")
+        else:
+            for file in files:
+                self.encrypt_file(file, f"{file}.asc")
 
     def check_keyring(self):
         if not self.fingerprint_in_keyring():
@@ -40,6 +51,7 @@ class Encrypt:
                     with open(f"{self.public_key_dir}/{file}", "r") as key_file:
                         text = key_file.read()
                     keys = self.gpg.scan_keys_mem(text)
+                    # TODO: make sure all recipents match fingerprints
                     if self.recipients in keys.fingerprints:
                         result = self.gpg.import_keys(text)
                         logger.info(
@@ -56,6 +68,7 @@ class Encrypt:
         return False
 
     def encrypt_file(self, input: str, output: str) -> None:
+        logger.debug(f"encrypt_file {input=} {output=}")
         if not self.keyring_ok:
             self.check_keyring()
         with open(input, "rb") as f:

@@ -2,7 +2,9 @@ import datetime
 import logging
 import os
 import sys
-from typing import Optional, Union
+from typing import Union
+
+from encryption import Encrypt
 
 logger = logging.getLogger(name=__name__)
 
@@ -16,7 +18,7 @@ class Config:
         SIMPLE_BACKUP_NUMBER_COPIES # TODO: number of copies of each backup path to keep
         SIMPLE_BACKUP_ENCRYPTION_ENABLE
         SIMPLE_BACKUP_ENCRYPTION_FINGERPRINTS
-        SIMPLE_BACKUP_ENCRYPTION_PUBLIC_KEY_DIR # TODO: getenv keydir
+        SIMPLE_BACKUP_ENCRYPTION_PUBLIC_KEY_DIR
         SIMPLE_BACKUP_ENCRYPTION_REMOVE_UNENCRYPTED
         """
         self.timestamp = datetime.datetime.now(tz=datetime.UTC).strftime(
@@ -38,15 +40,8 @@ class Config:
         if self.encryption_enabled:
             self.fingerprints = self.__get_key_fingerprints()
             self.key_directory = self.__get_public_key_dir()
-            try:
-                self.key_files = os.listdir(self.key_directory)
-            except FileNotFoundError as e:
-                logger.error(
-                    f"Unable to find public keys, check SIMPLE_BACKUP_ENCRYPTION_PUBLIC_KEY_DIR value. Aborting...\n{e}"
-                )
-                sys.exit(1)
-        else:
-            self.fingerprints = ""
+            self.encryptor = Encrypt(self.fingerprints, self.key_directory)
+            self.encryptor.check_keyring()
 
     def __get_encryption_env(self) -> bool:
         enabled = False
@@ -67,11 +62,10 @@ class Config:
             "SIMPLE_BACKUP_ENCRYPTION_FINGERPRINTS", None
         )
         if not fingerprints:
-            logger.warning(
-                "Encryption was enabled, but no fingerprints found, check SIMPLE_BACKUP_ENCRYPTION_FINGERPRINTS or disable SIMPLE_BACKUP_ENCRYPTION_ENABLE"
+            logger.critical(
+                "Encryption was enabled, but no fingerprints found, check SIMPLE_BACKUP_ENCRYPTION_FINGERPRINTS or disable SIMPLE_BACKUP_ENCRYPTION_ENABLE, exiting with errors..."
             )
-            self.encryption_enabled = False
-            return ""
+            sys.exit(1)
 
         if "," in fingerprints:
             fingerprint_list = fingerprints.split(",")
@@ -79,13 +73,13 @@ class Config:
         else:
             return fingerprints
 
-    def __get_public_key_dir(self) -> Optional[str]:
+    def __get_public_key_dir(self) -> str:
         key_dir = os.getenv("SIMPLE_BACKUP_ENCRYPTION_PUBLIC_KEY_DIR", None)
         if not key_dir:
             logger.warning(
-                f"No SIMPLE_BACKUP_ENCRYPTION_PUBLIC_KEY_DIR set, this is not an issue if you have already imported the public keys required for encryption."
+                "No SIMPLE_BACKUP_ENCRYPTION_PUBLIC_KEY_DIR set, this is not an issue if you have already imported the public keys required for encryption."
             )
-            return None
+            return ""
         else:
             return key_dir
 
