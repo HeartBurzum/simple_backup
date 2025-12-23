@@ -41,7 +41,9 @@ class Config:
             self.fingerprints = self.__get_key_fingerprints()
             self.key_directory = self.__get_public_key_dir()
             self.encryptor = Encrypt(self.fingerprints, self.key_directory)
+            logger.debug("checking encryptor keyring")
             self.encryptor.check_keyring()
+            logger.debug("finished encryptor keyring check")
 
     def __get_encryption_env(self) -> bool:
         enabled = False
