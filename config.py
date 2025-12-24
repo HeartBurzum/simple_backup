@@ -6,6 +6,9 @@ from typing import Union
 
 from encryption import Encrypt
 
+log_level = logging.DEBUG
+log_format = "[%(asctime)s][%(levelname)s][%(module)s] %(message)s"
+logging.basicConfig(level=log_level, format=log_format)
 logger = logging.getLogger(name=__name__)
 
 
@@ -15,7 +18,7 @@ class Config:
         Environment Variables:
         SIMPLE_BACKUP_PATH
         SIMPLE_BACKUP_DATA_DIR
-        SIMPLE_BACKUP_NUMBER_COPIES # TODO: number of copies of each backup path to keep
+        SIMPLE_BACKUP_NUMBER_COPIES
         SIMPLE_BACKUP_ENCRYPTION_ENABLE
         SIMPLE_BACKUP_ENCRYPTION_FINGERPRINTS
         SIMPLE_BACKUP_ENCRYPTION_PUBLIC_KEY_DIR
@@ -35,6 +38,15 @@ class Config:
             sys.exit(1)
 
         self.backup_path_list = self.__split_backup_path()
+
+        self.num_copies_str: str = os.getenv("SIMPLE_BACKUP_NUMBER_COPIES", "0")
+        try:
+            self.num_copies = int(self.num_copies_str)
+        except ValueError:
+            logger.critical(
+                f"SIMPLE_BACKUP_NUMBER_COPIES environment variable needs to be a number. exiting..."
+            )
+            sys.exit(1)
 
         self.encryption_enabled = self.__get_encryption_env()
         if self.encryption_enabled:
