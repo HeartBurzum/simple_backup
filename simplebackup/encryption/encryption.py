@@ -10,11 +10,16 @@ logger = logging.getLogger(__name__)
 
 class Encrypt:
     def __init__(
-        self, fingerprints: Union[str, list[str]], data_dir: str, key_directory: str
+        self,
+        fingerprints: Union[str, list[str]],
+        data_dir: str,
+        key_directory: str,
+        remove_unencrypted: bool,
     ):
         self.gpg = gnupg.GPG(gnupghome=f"{data_dir}/keyring")
         self.recipients = fingerprints
         self.public_key_dir = key_directory
+        self.remove_unencrypted = remove_unencrypted
         self.keyring_ok = False
 
         try:
@@ -96,8 +101,9 @@ class Encrypt:
             )
         if status.ok:
             logger.info(f"encryption successful. reason: {status.status}")
-            logger.debug(f"removing unencryped file {input}")
-            os.remove(input)
+            if self.remove_unencrypted:
+                logger.debug(f"removing unencryped file {input}")
+                os.remove(input)
         else:
             logger.error(
                 f"encryption failed. reason: {status.status} - {status.status_detail}"

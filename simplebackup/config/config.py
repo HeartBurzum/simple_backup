@@ -16,13 +16,14 @@ class Config:
     def __init__(self):
         """
         Environment Variables:
-        SIMPLE_BACKUP_PATH
-        SIMPLE_BACKUP_DATA_DIR
-        SIMPLE_BACKUP_NUMBER_COPIES
-        SIMPLE_BACKUP_ENCRYPTION_ENABLE
-        SIMPLE_BACKUP_ENCRYPTION_FINGERPRINTS
-        SIMPLE_BACKUP_ENCRYPTION_PUBLIC_KEY_DIR
-        SIMPLE_BACKUP_ENCRYPTION_REMOVE_UNENCRYPTED
+        SIMPLE_BACKUP_PATH : Required (format: "/path/to/dir" or "/path/to/dir1:/path/to/dir2")
+        SIMPLE_BACKUP_DATA_DIR : Optional (default: "/var/lib/simple_backup")
+        SIMPLE_BACKUP_NUMBER_COPIES : Optional (default: 0 (infinite))
+        SIMPLE_BACKUP_ENCRYPTION_ENABLE : Optional (default: False)
+        SIMPLE_BACKUP_ENCRYPTION_FINGERPRINTS : Required if encryption enabled (format: "key" or "key1,key2")
+        SIMPLE_BACKUP_ENCRYPTION_PUBLIC_KEY_DIR: Optional (default: "")
+        SIMPLE_BACKUP_ENCRYPTION_KEYRING_DIR : Optional (default: DATA_DIR/keyring)
+        SIMPLE_BACKUP_ENCRYPTION_REMOVE_UNENCRYPTED : Optional (default: True)
         """
         self.timestamp = datetime.datetime.now(tz=datetime.UTC).strftime(
             "%Y%m%d-%H%M%S"
@@ -73,8 +74,12 @@ class Config:
         if self.encryption_enabled:
             self.fingerprints = self.__get_key_fingerprints()
             self.key_directory = self.__get_public_key_dir()
+            self.remove_unencrypted = self.__get_remove_unencryped()
             self.encryptor = Encrypt(
-                self.fingerprints, self.data_dir, self.key_directory
+                self.fingerprints,
+                self.data_dir,
+                self.key_directory,
+                self.remove_unencrypted,
             )
             logger.debug("checking encryptor keyring")
             self.encryptor.check_keyring()
@@ -129,3 +134,10 @@ class Config:
             )
             sys.exit(1)
         return path_list
+
+    def __get_remove_unencryped(self) -> bool:
+        remove = os.getenv("SIMPLE_BACKUP_ENCRYPTION_REMOVE_UNENCRYPTED", "True")
+        if remove.lower() in ("false", "0"):
+            return False
+        else:
+            return True
