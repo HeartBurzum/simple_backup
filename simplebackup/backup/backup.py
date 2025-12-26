@@ -20,7 +20,7 @@ class Backup:
             logger.debug(f"Current path: {path}")
             try:
                 directory_name = path.split("/")[-1]
-                tar_file_full_path = f"{self.config.data_dir}/{self.config.timestamp}-{directory_name}.tar.gz"
+                tar_file_full_path = f"{self.config.backup_dir}/{self.config.timestamp}-{directory_name}.tar.gz"
                 with tarfile.open(name=f"{tar_file_full_path}", mode="w:gz") as tar:
                     try:
                         tar.add(f"{path}")
@@ -52,7 +52,7 @@ class Backup:
         we stat on each creation - extra calls, safer
         """
         logger.debug(f"existing_backups: {directory_name=}")
-        data_files = os.listdir(self.config.data_dir)
+        data_files = os.listdir(self.config.backup_dir)
         existing_files = list()
         for file in data_files:
             l: list[Union[float, str]] = file.split("-")  # pyright: ignore
@@ -78,7 +78,7 @@ class Backup:
         logger.debug(f"{existing_files}")
         while len(existing_files) > self.config.num_copies:
             delete = existing_files.pop(0)
-            path = f"{self.config.data_dir}/{delete[2]}"
+            path = f"{self.config.backup_dir}/{delete[2]}"
             if os.access(path, os.W_OK):
                 logger.info(f"Deleting copy {path}.")
                 os.remove(path)

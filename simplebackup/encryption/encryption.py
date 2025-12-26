@@ -12,11 +12,11 @@ class Encrypt:
     def __init__(
         self,
         fingerprints: Union[str, list[str]],
-        data_dir: str,
+        keyring_dir: str,
         key_directory: str,
         remove_unencrypted: bool,
     ):
-        self.gpg = gnupg.GPG(gnupghome=f"{data_dir}/keyring")
+        self.gpg = gnupg.GPG(gnupghome=f"{keyring_dir}")
         self.recipients = fingerprints
         self.public_key_dir = key_directory
         self.remove_unencrypted = remove_unencrypted

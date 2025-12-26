@@ -38,17 +38,23 @@ class Config:
             )
         logger.info(f"Simple Backup data directory is {self.data_dir}")
 
+        self.backup_dir = f"{self.data_dir}/backups"
+
         try:
-            os.makedirs(self.data_dir, mode=0o600)
-            logger.info(f"Created directory {self.data_dir}")
+            os.makedirs(f"{self.backup_dir}", mode=0o600)
+            logger.info(f"Created directory {self.backup_dir}")
         except FileExistsError:
             pass
 
-        try:
-            os.makedirs(f"{self.data_dir}/keyring", mode=0o600)
-            logger.info(f"Created keyring directory, {self.data_dir}/keyring")
-        except FileExistsError:
-            pass
+        self.keyring_dir = os.getenv(
+            "SIMPLE_BACKUP_ENCRYPTION_KEYRING_DIR", f"{self.data_dir}/keyring"
+        )
+        if self.keyring_dir == f"{self.data_dir}/keyring":
+            try:
+                os.makedirs(f"{self.keyring_dir}", mode=0o600)
+                logger.info(f"Created keyring directory, {self.keyring_dir}")
+            except FileExistsError:
+                pass
 
         if not os.access(self.data_dir, os.W_OK):
             logger.critical(f"Unable to write to {self.data_dir=}. Exiting...")
@@ -77,7 +83,7 @@ class Config:
             self.remove_unencrypted = self.__get_remove_unencryped()
             self.encryptor = Encrypt(
                 self.fingerprints,
-                self.data_dir,
+                self.keyring_dir,
                 self.key_directory,
                 self.remove_unencrypted,
             )
