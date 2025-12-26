@@ -29,8 +29,13 @@ class Config:
         )
         logger.info(f"Started backups at {self.timestamp}")
 
-        self.data_dir = os.getenv("SIMPLE_BACKUP_DATA_DIR", "/var/lib/simple_backup")
-        logger.debug(f"Simple Debug data directory is {self.data_dir}")
+        self.data_dir = os.getenv("SIMPLE_BACKUP_DATA_DIR", None)
+        if self.data_dir == None:
+            self.data_dir = "/var/lib/simple_backup"
+            logger.warning(
+                f"SIMPLE_BACKUP_DATA_DIR environment variable not set. Defaulting to {self.data_dir}"
+            )
+        logger.info(f"Simple Backup data directory is {self.data_dir}")
 
         self.backup_path_env_str = os.getenv(key="SIMPLE_BACKUP_PATH")
         if not self.backup_path_env_str:
