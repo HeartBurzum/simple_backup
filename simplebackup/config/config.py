@@ -43,6 +43,12 @@ class Config:
         except FileExistsError:
             pass
 
+        try:
+            os.makedirs(f"{self.data_dir}/keyring", mode=0o600)
+            logger.info(f"Created keyring directory, {self.data_dir}/keyring")
+        except FileExistsError:
+            pass
+
         if not os.access(self.data_dir, os.W_OK):
             logger.critical(f"Unable to write to {self.data_dir=}. Exiting...")
             sys.exit(1)
@@ -67,7 +73,9 @@ class Config:
         if self.encryption_enabled:
             self.fingerprints = self.__get_key_fingerprints()
             self.key_directory = self.__get_public_key_dir()
-            self.encryptor = Encrypt(self.fingerprints, self.key_directory)
+            self.encryptor = Encrypt(
+                self.fingerprints, self.data_dir, self.key_directory
+            )
             logger.debug("checking encryptor keyring")
             self.encryptor.check_keyring()
             logger.debug("finished encryptor keyring check")

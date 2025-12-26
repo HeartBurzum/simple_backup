@@ -9,8 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 class Encrypt:
-    def __init__(self, fingerprints: Union[str, list[str]], key_directory: str):
-        self.gpg = gnupg.GPG()
+    def __init__(
+        self, fingerprints: Union[str, list[str]], data_dir: str, key_directory: str
+    ):
+        self.gpg = gnupg.GPG(gnupghome=f"{data_dir}/keyring")
         self.recipients = fingerprints
         self.public_key_dir = key_directory
         self.keyring_ok = False
@@ -51,12 +53,14 @@ class Encrypt:
                     with open(f"{self.public_key_dir}/{file}", "r") as key_file:
                         text = key_file.read()
                     keys = self.gpg.scan_keys_mem(text)
-                    if keys.fingerprints[0] in missing:
-                        result = self.gpg.import_keys(text)
-                        missing.remove(keys.fingerprints[0])
-                        logger.info(
-                            f"gpg import key result return code {result.results[0]["ok"]}. reason: {result.ok_reason[result.results[0]["ok"]]}"
-                        )
+                    logger.debug(f"key read {keys.fingerprints}")
+                    for fingerprint in keys.fingerprints:
+                        if fingerprint in missing:
+                            result = self.gpg.import_keys(text)
+                            missing.remove(fingerprint)
+                            logger.info(
+                                f"gpg import key result return code {result.results[0]["ok"]}. reason: {result.ok_reason[result.results[0]["ok"]]}"
+                            )
 
         if missing:
             logger.critical(
