@@ -4,7 +4,7 @@ import tarfile
 from datetime import datetime
 from typing import Union
 
-from config import Config
+from simplebackup.config.config import Config
 
 logger = logging.getLogger(name=__name__)
 

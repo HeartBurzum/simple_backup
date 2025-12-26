@@ -4,7 +4,7 @@ import os
 import sys
 from typing import Union
 
-from encryption import Encrypt
+from simplebackup.encryption.encryption import Encrypt
 
 log_level = logging.DEBUG
 log_format = "[%(asctime)s][%(levelname)s][%(module)s] %(message)s"
