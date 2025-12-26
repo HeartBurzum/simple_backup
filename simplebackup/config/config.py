@@ -86,7 +86,7 @@ class Config:
         logger.info(f"Backup encryption enabled: {enabled}")
         return enabled
 
-    def __get_key_fingerprints(self) -> Union[str, list[str]]:
+    def __get_key_fingerprints(self) -> list[str]:
         fingerprints: Union[None, str] = os.getenv(
             "SIMPLE_BACKUP_ENCRYPTION_FINGERPRINTS", None
         )
@@ -100,7 +100,7 @@ class Config:
             fingerprint_list = fingerprints.split(",")
             return fingerprint_list
         else:
-            return fingerprints
+            return [fingerprints]
 
     def __get_public_key_dir(self) -> str:
         key_dir = os.getenv("SIMPLE_BACKUP_ENCRYPTION_PUBLIC_KEY_DIR", None)
