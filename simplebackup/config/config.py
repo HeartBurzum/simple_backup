@@ -37,6 +37,16 @@ class Config:
             )
         logger.info(f"Simple Backup data directory is {self.data_dir}")
 
+        try:
+            os.makedirs(self.data_dir, mode=0o600)
+            logger.info(f"Created directory {self.data_dir}")
+        except FileExistsError:
+            pass
+
+        if not os.access(self.data_dir, os.W_OK):
+            logger.critical(f"Unable to write to {self.data_dir=}. Exiting...")
+            sys.exit(1)
+
         self.backup_path_env_str = os.getenv(key="SIMPLE_BACKUP_PATH")
         if not self.backup_path_env_str:
             logger.critical("SIMPLE_BACKUP_PATH was unset, exiting...")
